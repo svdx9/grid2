@@ -33,3 +33,21 @@ allows the model API.
 
 Single runs are noisy — run each variant several times before drawing
 conclusions.
+
+## Results (one run each, 2026-09-26, AG Grid 36.2.0, web tools denied)
+
+| Variant | Hidden tests | Type check | Modules | Time | Turns | Cost |
+| --- | --- | --- | --- | --- | --- | --- |
+| baseline (untouched app) | 0/7 | ✓ | ✓ | – | – | – |
+| reference solution | 7/7 | ✓ | ✓ | – | – | – |
+| **with skill** | **7/7** | ✓ | ✓ | 5.6 min | 37 | $1.11 |
+| without skill | 4/7 | ✓ | ✓ | 15.3 min | 94 | $3.12 |
+
+Without the skill the agent worked out the quote handling by reading
+`node_modules` itself (that took most of its 94 turns), but missed Excel's
+trailing newline (single-value paste into a range, blank written into the
+next row), and hid new rows under a filter by moving them into pinned rows,
+which the filter test counts as not displayed. With the skill it
+used `alwaysPassFilter`, stripped the trailing row and appended overflow rows.
+
+One run per variant is anecdotal; repeat before relying on the numbers.
