@@ -103,3 +103,26 @@ shadcn CLI's own `transformStyle` from the `shadcn-ui/ui` registry source
 because `ui.shadcn.com` wasn't reachable from the build environment.
 `components.json` is set to `radix-mira` / Hugeicons, so
 `npx shadcn add <component>` works as usual on a normal network.
+
+## Offline agent skill: `ag-grid-offline`
+
+`.claude/skills/ag-grid-offline/` is a Claude Code skill for AG Grid work in
+environments where ag-grid.com is unreachable. The official `ag-grid/skills`
+mostly route the agent to the docs website; this one carries the knowledge
+and reads the rest from the installed packages:
+
+- `scripts/ag-lookup.mjs` — offline API reference from the installed
+  `.d.ts` files and source: `doc`, `module`, `search` (discover features by
+  description), `source`, `modules`, and `docs` (searches a local snapshot).
+- `scripts/check-modules.mjs` — static check that every option / colDef
+  property / API method used has its module registered (the "silently inert
+  feature" bug).
+- `scripts/snapshot-docs.mjs` — snapshots the docs for the installed version
+  from the AG Grid repo or an internal git mirror (the snapshot itself is
+  gitignored).
+- `references/*.md` — tested rules for clipboard/Excel, export, editing,
+  filtering, setup and verification.
+- `examples/` — the tested code from this app (a test keeps them identical).
+
+`skill-evals/ag-grid-offline/` measures it: a headless agent gets a task on a
+fresh app with web access denied, and hidden Playwright tests grade the result.
