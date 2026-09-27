@@ -383,6 +383,10 @@ function HowToPanel() {
             </KbdGroup>{" "}
             to fill down. Everything is undoable.
           </p>
+          <p>
+            Click a row number, or drag down the row numbers, to select whole rows — then copy, paste over them or
+            use <em>Delete rows</em>.
+          </p>
         </Step>
         <Step title="Round trip with Excel">
           <p>

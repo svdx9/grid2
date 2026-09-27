@@ -35,6 +35,7 @@ import {
   type MenuItemDef,
   type ProcessDataFromClipboardParams,
   type RowClassRules,
+  type RowNumbersOptions,
 } from "ag-grid-community"
 import {
   CellSelectionModule,
@@ -44,6 +45,7 @@ import {
   ExcelExportModule,
   LicenseManager,
   RichSelectModule,
+  RowNumbersModule,
   SetFilterModule,
 } from "ag-grid-enterprise"
 import { AgGridReact } from "ag-grid-react"
@@ -89,6 +91,8 @@ ModuleRegistry.registerModules([
   LargeTextEditorModule,
   RichSelectModule,
   UndoRedoEditModule,
+  // Sheets-style row header: click or drag down it to select whole rows
+  RowNumbersModule,
   // filtering
   TextFilterModule,
   NumberFilterModule,
@@ -160,6 +164,7 @@ const defaultExcelExportParams: ExcelExportParams = {
   sheetName: "Orders",
 }
 const cellSelection: CellSelectionOptions<Order> = { handle: { mode: "fill" }, enableHeaderHighlight: true }
+const rowNumbers: RowNumbersOptions = { width: 52, minWidth: 44 }
 
 export const DataGrid = memo(function DataGrid({
   ref,
@@ -542,6 +547,7 @@ export const DataGrid = memo(function DataGrid({
       enterNavigatesVertically
       // selection + clipboard
       cellSelection={cellSelection}
+      rowNumbers={rowNumbers}
       processCellForClipboard={processCellForClipboard}
       processDataFromClipboard={processDataFromClipboard}
       sendToClipboard={sendToClipboard}

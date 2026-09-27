@@ -33,6 +33,8 @@ export const shadcnMiraTheme = themeQuartz.withPart(iconSetQuartzLight).withPara
   selectedRowBackgroundColor: "var(--accent)",
   rangeSelectionBorderColor: "var(--primary)",
   rangeSelectionBackgroundColor: "color-mix(in oklch, var(--primary) 8%, transparent)",
+  rangeHeaderHighlightColor: "color-mix(in oklch, var(--primary) 7%, var(--muted))",
+  rowNumbersSelectedColor: "color-mix(in oklch, var(--primary) 16%, var(--muted))",
   cellEditingBorder: { color: "var(--ring)", width: 1 },
   focusShadow: { radius: 3, spread: 0, color: "color-mix(in oklch, var(--ring) 50%, transparent)" },
 

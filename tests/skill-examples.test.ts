@@ -20,6 +20,7 @@ const sources: Record<string, string> = {
   "filtering.spec.ts": "e2e/filtering.spec.ts",
   "export.spec.ts": "e2e/export.spec.ts",
   "editing.spec.ts": "e2e/editing.spec.ts",
+  "row-numbers.spec.ts": "e2e/row-numbers.spec.ts",
 }
 
 describe("skill examples match the tested app code", () => {
