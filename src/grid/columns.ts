@@ -94,6 +94,31 @@ const excelClass: Record<ExcelCellKind, string> = {
   boolean: "xl-bool",
 }
 
+/**
+ * Excel-style column filters. Every column gets the Set Filter in Excel (Mac)
+ * mode — a searchable value list that filters as you type, with a Reset
+ * button — and, where Excel has them, "Text/Number/Date Filters" conditions in
+ * a submenu above the list (a Multi Filter).
+ */
+const EXCEL_MODE = { excelMode: "mac" } as const
+
+function excelFilter(
+  condition?: "agTextColumnFilter" | "agNumberColumnFilter" | "agDateColumnFilter",
+  setFilterParams: Record<string, unknown> = {}
+): Pick<ColDef<Order>, "filter" | "filterParams"> {
+  const set = { filter: "agSetColumnFilter", filterParams: { ...EXCEL_MODE, ...setFilterParams } }
+  if (!condition) return set
+  return {
+    filter: "agMultiColumnFilter",
+    filterParams: { filters: [{ filter: condition, display: "subMenu" }, set] },
+  }
+}
+
+/** show a value list the way the cells look ("$1,499.99", not 1499.99) */
+const listValues = <T,>(format: (value: T | null) => string) => ({
+  valueFormatter: (p: { value: T | null }) => (p.value == null ? "(Blanks)" : format(p.value)),
+})
+
 function col(field: string, def: ColDef<Order>): ColDef<Order> {
   const kind = COLUMN_META[field].kind
   return {
@@ -109,21 +134,21 @@ export const columnDefs: ColDef<Order>[] = [
   col("sku", {
     headerName: "SKU",
     cellDataType: "text",
-    filter: "agTextColumnFilter",
+    ...excelFilter("agTextColumnFilter"),
     width: 100,
     pinned: "left",
   }),
   col("customer", {
     headerName: "Customer",
     cellDataType: "text",
-    filter: "agSetColumnFilter",
+    ...excelFilter("agTextColumnFilter"),
     minWidth: 170,
     flex: 1,
   }),
   col("region", {
     headerName: "Region",
     cellDataType: "text",
-    filter: "agSetColumnFilter",
+    ...excelFilter(),
     cellEditor: "agRichSelectCellEditor",
     cellEditorParams: { values: [...REGIONS], allowTyping: true, filterList: true, highlightMatch: true },
     width: 120,
@@ -131,13 +156,13 @@ export const columnDefs: ColDef<Order>[] = [
   col("product", {
     headerName: "Product",
     cellDataType: "text",
-    filter: "agSetColumnFilter",
+    ...excelFilter("agTextColumnFilter"),
     width: 130,
   }),
   col("quantity", {
     headerName: "Qty",
     cellDataType: "number",
-    filter: "agNumberColumnFilter",
+    ...excelFilter("agNumberColumnFilter", listValues(formatInteger)),
     cellEditor: "agNumberCellEditor",
     cellEditorParams: { precision: 0 },
     valueFormatter: (p: ValueFormatterParams<Order, number>) => formatInteger(p.value),
@@ -147,7 +172,7 @@ export const columnDefs: ColDef<Order>[] = [
   col("unitPrice", {
     headerName: "Unit price",
     cellDataType: "number",
-    filter: "agNumberColumnFilter",
+    ...excelFilter("agNumberColumnFilter", listValues(formatCurrency)),
     cellEditor: "agNumberCellEditor",
     cellEditorParams: { precision: 2 },
     valueFormatter: (p: ValueFormatterParams<Order, number>) => formatCurrency(p.value),
@@ -164,7 +189,7 @@ export const columnDefs: ColDef<Order>[] = [
         : null,
     cellDataType: "number",
     editable: false,
-    filter: "agNumberColumnFilter",
+    ...excelFilter("agNumberColumnFilter", listValues(formatCurrency)),
     valueFormatter: (p: ValueFormatterParams<Order, number>) => formatCurrency(p.value),
     getQuickFilterText: (p) => `${p.value ?? ""} ${formatCurrency(p.value)}`,
     width: 120,
@@ -173,7 +198,7 @@ export const columnDefs: ColDef<Order>[] = [
   col("orderDate", {
     headerName: "Order date",
     cellDataType: "dateString",
-    filter: "agDateColumnFilter",
+    ...excelFilter("agDateColumnFilter"),
     cellEditor: "agDateStringCellEditor",
     valueFormatter: (p: ValueFormatterParams<Order, string>) => formatIsoDate(p.value),
     getQuickFilterText: (p) => `${p.value ?? ""} ${formatIsoDate(p.value)}`,
@@ -183,18 +208,14 @@ export const columnDefs: ColDef<Order>[] = [
   col("shipped", {
     headerName: "Shipped",
     cellDataType: "boolean",
-    filter: "agSetColumnFilter",
-    filterParams: {
-      valueFormatter: (p: { value: boolean | null }) =>
-        p.value == null ? "(Blanks)" : p.value ? "Yes" : "No",
-    },
+    ...excelFilter(undefined, listValues<boolean>((v) => (v ? "Yes" : "No"))),
     getQuickFilterText: (p) => (p.value ? "shipped" : ""),
     width: 100,
   }),
   col("notes", {
     headerName: "Notes",
     cellDataType: "text",
-    filter: "agTextColumnFilter",
+    ...excelFilter("agTextColumnFilter"),
     cellEditor: "agLargeTextCellEditor",
     cellEditorPopup: true,
     cellEditorParams: { maxLength: 2000, rows: 6, cols: 50 },

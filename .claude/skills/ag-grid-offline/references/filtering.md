@@ -15,6 +15,27 @@ Verified against AG Grid 36.2.0. Working code: `examples/DataGrid.tsx`.
 - `api.isAnyFilterPresent()` includes the quick filter; `getFilterModel()`
   covers column filters only.
 
+## Excel-style filters (Set Filter `excelMode`)
+
+- `filterParams.excelMode: 'mac' | 'windows'` on `agSetColumnFilter`. What it
+  changes (36.2 source, `applyExcelModeOptions`): **mac** → `buttons: ['reset']`,
+  `applyMiniFilterWhileTyping: true`, `debounceMs: 500` (typing in the search
+  filters the grid); **windows** → `buttons: ['apply', 'cancel']`,
+  `closeOnApply: true`. Both: Enter applies, "(Blanks)" is listed last.
+- Excel shows a value list on *every* column plus "Text/Number/Date Filters"
+  above it. Reproduce with `agMultiColumnFilter` (`MultiFilterModule`):
+  `filters: [{ filter: 'agNumberColumnFilter', display: 'subMenu' },
+  { filter: 'agSetColumnFilter', filterParams: { excelMode: 'mac' } }]`.
+  Model shape becomes `{ filterType: 'multi', filterModels: [cond, set] }`.
+- Value lists show **raw** values unless `filterParams.valueFormatter` is set
+  on the Set Filter — pass the column's formatter (`$0.85`, not `0.85`) and
+  return "(Blanks)" for null yourself.
+- `cellDataType: 'dateString'` columns get a year › month › day tree list
+  automatically.
+- Testing: flat-list entries have no aria-label (tree entries do: "2025 Filter
+  Value"); match `.ag-virtual-list-item` by exact visible text, and click the
+  entry, not its hidden `<input>`.
+
 ## The "rows vanish while filtered" problem
 
 - Any transaction (`applyTransaction`, also the one adding a row) re-runs

@@ -24,6 +24,7 @@ const sources: Record<string, string> = {
   "editing.spec.ts": "e2e/editing.spec.ts",
   "row-numbers.spec.ts": "e2e/row-numbers.spec.ts",
   "empty-rows.spec.ts": "e2e/empty-rows.spec.ts",
+  "excel-filter.spec.ts": "e2e/excel-filter.spec.ts",
 }
 
 describe("skill examples match the tested app code", () => {

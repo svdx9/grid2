@@ -48,6 +48,7 @@ import {
   ContextMenuModule,
   ExcelExportModule,
   LicenseManager,
+  MultiFilterModule,
   RichSelectModule,
   RowNumbersModule,
   SetFilterModule,
@@ -112,6 +113,7 @@ ModuleRegistry.registerModules([
   NumberFilterModule,
   DateFilterModule,
   SetFilterModule,
+  MultiFilterModule,
   QuickFilterModule,
   // selection, clipboard, export
   CellSelectionModule,
