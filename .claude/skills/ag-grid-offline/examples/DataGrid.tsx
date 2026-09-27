@@ -192,7 +192,9 @@ function initialRows(): { rows: Order[]; emptyIds: Set<string> } {
   return { rows: [...generateOrders(), ...empty], emptyIds: new Set(empty.map((r) => r.id)) }
 }
 const cellSelection: CellSelectionOptions<Order> = { handle: { mode: "fill" }, enableHeaderHighlight: true }
-const rowNumbers: RowNumbersOptions = { width: 52, minWidth: 44 }
+// AG Grid re-measures this column on full refreshes only, not on transactions
+// (which is how empty rows arrive), so give it room for 5 digits up front.
+const rowNumbers: RowNumbersOptions = { width: 64, minWidth: 64 }
 
 export const DataGrid = memo(function DataGrid({
   ref,

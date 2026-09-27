@@ -15,6 +15,10 @@ sort and filter. The selected-number colour derives from `accentColor`; with a
 near-black accent set `rowNumbersSelectedColor` (and
 `rangeHeaderHighlightColor`) explicitly or the digits become unreadable.
 Row numbers are not exported unless `exportRowNumbers: true`.
+The column auto-fits its width to the row count only on full refreshes
+(`modelUpdated` without `keepRenderedRows`), not after `applyTransaction` —
+if rows are added by transactions, set `minWidth` wide enough for the
+largest number (e.g. 64px for 5 digits at 12px) or the digits get clipped.
 
 ## Empty rows below the data, growing as you scroll
 

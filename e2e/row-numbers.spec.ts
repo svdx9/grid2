@@ -67,3 +67,15 @@ test("pasting whole rows into a row-number selection fills every column", async 
   const { id: _b, ...original } = source
   expect(pasted).toEqual(original)
 })
+
+test("four-digit row numbers fit and are centred", async ({ page }) => {
+  for (let i = 0; i < 12; i++) {
+    await page.evaluate(() => window.__gridApi.ensureIndexVisible(window.__gridApi.getDisplayedRowCount() - 1))
+    await page.waitForTimeout(100)
+  }
+  await expect.poll(() => page.evaluate(() => window.__gridApi.getDisplayedRowCount())).toBe(1250)
+  const last = rowNumberCell(page, 1249)
+  await expect(last).toHaveText("1250")
+  const fit = await last.evaluate((c) => ({ fits: c.scrollWidth <= c.clientWidth, align: getComputedStyle(c).textAlign }))
+  expect(fit).toEqual({ fits: true, align: "center" })
+})

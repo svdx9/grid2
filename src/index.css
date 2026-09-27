@@ -126,3 +126,9 @@
 .ag-row.row-empty .ag-cell[col-id="shipped"] > * {
   visibility: hidden;
 }
+
+/* row numbers: centred, like Sheets */
+.ag-cell.ag-row-number-cell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
