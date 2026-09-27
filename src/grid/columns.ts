@@ -20,6 +20,8 @@ export interface GridContext {
   onInvalidValue: (colId: string, raw: unknown) => void
   /** true for the Sheets-style empty rows below the data (see emptyRows.ts) */
   isEmptyRow: (id: string | undefined) => boolean
+  /** Sheets-style row number (filters ignored), see rowNumbering.ts */
+  rowNumberOf: (id: string | undefined) => number | undefined
 }
 
 export interface ColumnMeta {

@@ -20,6 +20,20 @@ The column auto-fits its width to the row count only on full refreshes
 if rows are added by transactions, set `minWidth` wide enough for the
 largest number (e.g. 64px for 5 digits at 12px) or the digits get clipped.
 
+### Keeping row numbers when filtering (Sheets behaviour)
+
+Built-in row numbers are display positions, so filtering renumbers
+(1, 2, 3…). For Sheets behaviour (a filtered view reads 3, 7, 12…) pass
+`rowNumbers.valueGetter` returning a per-row number computed on every
+`modelUpdated`: the row's position in the current sort order over **all**
+rows, ignoring filters. AG Grid's unfiltered sorted order isn't public, so
+reproduce its sort (36.2 `RowNodeSorter.compareRowNodes`): raw values via
+`api.getCellValue` (`CellApiModule`), `colDef.comparator` if set, otherwise
+`_defaultComparator` (not exported: nulls first, then plain `<`/`>`, or
+`localeCompare` with `accentedSort`); stable `Array.sort`, ties in data order
+(`forEachNode` order). Test parity with the grid's own order for every column
+in both directions. See `examples/rowNumbering.ts`.
+
 ## Empty rows below the data, growing as you scroll
 
 There's no built-in option for the client-side row model; build it from

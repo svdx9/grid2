@@ -79,3 +79,74 @@ test("four-digit row numbers fit and are centred", async ({ page }) => {
   const fit = await last.evaluate((c) => ({ fits: c.scrollWidth <= c.clientWidth, align: getComputedStyle(c).textAlign }))
   expect(fit).toEqual({ fits: true, align: "center" })
 })
+
+/** the row number shown for each displayed row (read through the grid, not the DOM) */
+const shownNumbers = (page: Page, count: number) =>
+  page.evaluate((n) => {
+    const api = window.__gridApi
+    return Array.from({ length: n }, (_, i) =>
+      Number(api.getCellValue({ rowNode: api.getDisplayedRowAtIndex(i), colKey: "ag-Grid-RowNumbersColumn" }))
+    )
+  }, count)
+
+const displayedIdList = (page: Page) =>
+  page.evaluate(() => {
+    const ids: string[] = []
+    window.__gridApi.forEachNodeAfterFilterAndSort((n: { id: string }) => ids.push(n.id))
+    return ids
+  })
+
+const setSort = (page: Page, colId: string | null, sort?: "asc" | "desc") =>
+  page.evaluate(
+    ([c, s]) =>
+      window.__gridApi.applyColumnState({ state: c ? [{ colId: c, sort: s }] : [], defaultState: { sort: null } }),
+    [colId, sort] as const
+  )
+
+const NORTH = { region: { filterType: "set", values: ["North"] } }
+
+test("filtering keeps each row's number (like Sheets)", async ({ page }) => {
+  const unfiltered = await displayedIdList(page)
+  await page.evaluate((m) => window.__gridApi.setFilterModel(m), NORTH)
+  await expect.poll(async () => (await displayedIdList(page)).length).toBeLessThan(unfiltered.length)
+  const filtered = await displayedIdList(page)
+  const expected = filtered.slice(0, 20).map((id) => unfiltered.indexOf(id) + 1)
+  expect(await shownNumbers(page, 20)).toEqual(expected)
+  expect(expected[1] - expected[0]).toBeGreaterThan(1) // gaps, not 1, 2, 3
+  // on screen too (once rows animating out have gone)
+  await expect(rowNumberCell(page, 1)).toHaveCount(1)
+  await expect(rowNumberCell(page, 0)).toHaveText(String(expected[0]))
+  await expect(rowNumberCell(page, 1)).toHaveText(String(expected[1]))
+})
+
+test("the global filter keeps row numbers too, and empty rows continue after the data", async ({ page }) => {
+  const unfiltered = await displayedIdList(page)
+  await page.getByLabel("Global filter").fill("Globex")
+  await expect.poll(async () => (await displayedIdList(page)).length).toBeLessThan(200)
+  const filtered = await displayedIdList(page)
+  const isEmpty = (id: string) => id.startsWith("empty-")
+  const dataRows = filtered.filter((id) => !isEmpty(id))
+  const numbers = await shownNumbers(page, dataRows.length + 2)
+  expect(numbers.slice(0, dataRows.length)).toEqual(dataRows.map((id) => unfiltered.indexOf(id) + 1))
+  expect(numbers.slice(dataRows.length)).toEqual([251, 252])
+})
+
+test("with no filter, numbers match the grid's own sort order for every column", async ({ page }) => {
+  const columns = ["sku", "customer", "region", "product", "quantity", "unitPrice", "total", "orderDate", "shipped", "notes"]
+  for (const colId of columns) {
+    for (const dir of ["asc", "desc"] as const) {
+      await setSort(page, colId, dir)
+      const numbers = await shownNumbers(page, 250)
+      expect(numbers, `${colId} ${dir}`).toEqual(Array.from({ length: 250 }, (_, i) => i + 1))
+    }
+  }
+})
+
+test("sorted and filtered: numbers are positions in the sorted, unfiltered order", async ({ page }) => {
+  await setSort(page, "unitPrice", "desc")
+  const sortedAll = await displayedIdList(page)
+  await page.evaluate((m) => window.__gridApi.setFilterModel(m), NORTH)
+  await expect.poll(async () => (await displayedIdList(page)).length).toBeLessThan(sortedAll.length)
+  const filtered = (await displayedIdList(page)).filter((id) => !id.startsWith("empty-"))
+  expect(await shownNumbers(page, filtered.length)).toEqual(filtered.map((id) => sortedAll.indexOf(id) + 1))
+})

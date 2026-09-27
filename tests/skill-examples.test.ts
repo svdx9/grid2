@@ -16,6 +16,7 @@ const sources: Record<string, string> = {
   "theme.ts": "src/grid/theme.ts",
   "data.ts": "src/grid/data.ts",
   "emptyRows.ts": "src/grid/emptyRows.ts",
+  "rowNumbering.ts": "src/grid/rowNumbering.ts",
   "helpers.ts": "e2e/helpers.ts",
   "clipboard.spec.ts": "e2e/clipboard.spec.ts",
   "filtering.spec.ts": "e2e/filtering.spec.ts",

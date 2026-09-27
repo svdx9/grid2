@@ -1,4 +1,5 @@
 import {
+  CellApiModule,
   CellStyleModule,
   CheckboxEditorModule,
   ClientSideRowModelApiModule,
@@ -81,12 +82,14 @@ import {
   processCellForCsv,
   processCellForExcel,
 } from "./io"
+import { computeRowNumbers } from "./rowNumbering"
 import { shadcnMiraTheme } from "./theme"
 
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   ClientSideRowModelApiModule,
   ColumnApiModule,
+  CellApiModule,
   RowApiModule,
   ScrollApiModule,
   RenderApiModule,
@@ -194,7 +197,13 @@ function initialRows(): { rows: Order[]; emptyIds: Set<string> } {
 const cellSelection: CellSelectionOptions<Order> = { handle: { mode: "fill" }, enableHeaderHighlight: true }
 // AG Grid re-measures this column on full refreshes only, not on transactions
 // (which is how empty rows arrive), so give it room for 5 digits up front.
-const rowNumbers: RowNumbersOptions = { width: 64, minWidth: 64 }
+// Numbers stay with their rows when filtering, like Sheets (rowNumbering.ts).
+const rowNumbers: RowNumbersOptions = {
+  width: 64,
+  minWidth: 64,
+  valueGetter: ({ node, context }) =>
+    (context as GridContext).rowNumberOf(node?.id) ?? (node?.rowIndex != null ? node.rowIndex + 1 : null),
+}
 
 export const DataGrid = memo(function DataGrid({
   ref,
@@ -209,6 +218,10 @@ export const DataGrid = memo(function DataGrid({
   const [rowData, setRowData] = useState<Order[]>(initial.rows)
   const apiRef = useRef<GridApi<Order> | null>(null)
   const isEmptyRow = useCallback((id: string | undefined) => !!id && emptyIds.current.has(id), [])
+
+  // ── Sheets-style row numbers: fixed per row regardless of filters
+  const rowNumberById = useRef(new Map<string, number>())
+  const rowNumberOf = useCallback((id: string | undefined) => (id ? rowNumberById.current.get(id) : undefined), [])
 
   // ── "bound" filters: rows added/edited while a filter is active stay visible
   const keptIds = useRef(new Set<string>())
@@ -307,8 +320,9 @@ export const DataGrid = memo(function DataGrid({
         })
       },
       isEmptyRow,
+      rowNumberOf,
     }),
-    [isEmptyRow]
+    [isEmptyRow, rowNumberOf]
   )
 
   // ───────────────────────────── row operations ─────────────────────────────
@@ -457,9 +471,11 @@ export const DataGrid = memo(function DataGrid({
       // exposed for the Playwright suite (dev builds only)
       if (import.meta.env.DEV) (window as unknown as { __gridApi: unknown }).__gridApi = e.api
       filterSignature.current = currentSignature(e.api)
+      rowNumberById.current = computeRowNumbers(e.api, isEmptyRow)
+      e.api.refreshCells({ columns: ["ag-Grid-RowNumbersColumn"] })
       publishStatus()
     },
-    [publishStatus]
+    [publishStatus, isEmptyRow]
   )
 
   const onFilterChanged = useCallback(() => {
@@ -595,6 +611,15 @@ export const DataGrid = memo(function DataGrid({
     [addRow, deleteRows]
   )
 
+  /** Rows were added/removed/sorted/filtered: renumber, then refresh the status bar.
+   *  (AG Grid refreshes the row-number cells itself shortly after this event.) */
+  const onModelUpdated = useCallback(() => {
+    const api = apiRef.current
+    if (!api || api.isDestroyed()) return
+    rowNumberById.current = computeRowNumbers(api, isEmptyRow)
+    publishStatus()
+  }, [isEmptyRow, publishStatus])
+
   // ───────────────────────────── imperative API ─────────────────────────────
 
   useImperativeHandle(
@@ -685,7 +710,7 @@ export const DataGrid = memo(function DataGrid({
       onCellValueChanged={onCellValueChanged}
       onPasteStart={onPasteStart}
       onPasteEnd={onPasteEnd}
-      onModelUpdated={publishStatus}
+      onModelUpdated={onModelUpdated}
       onRedoEnded={publishStatus}
       onUndoEnded={publishStatus}
     />
