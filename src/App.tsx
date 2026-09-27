@@ -80,6 +80,9 @@ function useDarkMode() {
     } catch {
       /* storage unavailable */
     }
+    // a host page (e.g. an embedding viewer) may state the theme explicitly
+    const hostTheme = document.documentElement.getAttribute("data-theme")
+    if (hostTheme === "dark" || hostTheme === "light") return hostTheme === "dark"
     return window.matchMedia("(prefers-color-scheme: dark)").matches
   })
   useEffect(() => {
@@ -124,7 +127,7 @@ export default function App() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-svh flex-col">
+      <div className="flex h-full flex-col">
         {/* header */}
         <header className="flex items-center gap-3 border-b px-4 py-2.5">
           <div className="flex min-w-0 flex-col">
