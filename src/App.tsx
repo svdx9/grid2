@@ -387,6 +387,10 @@ function HowToPanel() {
             Click a row number, or drag down the row numbers, to select whole rows — then copy, paste over them or
             use <em>Delete rows</em>.
           </p>
+          <p>
+            Like a spreadsheet, empty rows continue below the data (also when filtered) and more appear as you scroll,
+            up to 1,000. Type or paste into one and it becomes a real row.
+          </p>
         </Step>
         <Step title="Round trip with Excel">
           <p>

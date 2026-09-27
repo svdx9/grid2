@@ -29,6 +29,11 @@ Verified against AG Grid 36.2.0. Working code: `examples/columns.ts`,
 - `undoRedoCellEditing` (`UndoRedoEditModule`, `@initial`) undoes edits,
   a whole paste as one step, and Delete-clearing a range (all tested). Rows
   added/removed by your own transactions are not undone by it.
+- **The undo history is cleared by every `modelUpdated` that doesn't carry
+  `keepUndoRedoStack`** — which includes `applyTransaction`, sorting and
+  filtering (36.2). Anything that adds rows in the background (auto-growing
+  grids, polling) silently wipes undo, so batch such updates.
+  Re-verify: `ag-lookup.mjs source "keepUndoRedoStack" -C 3`.
 - Edits don't re-run sort or filter; the next transaction does. A row edited
   out of the active filter disappears at that point — see `filtering.md`.
 

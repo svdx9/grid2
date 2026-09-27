@@ -15,12 +15,14 @@ const sources: Record<string, string> = {
   "DataGrid.tsx": "src/grid/DataGrid.tsx",
   "theme.ts": "src/grid/theme.ts",
   "data.ts": "src/grid/data.ts",
+  "emptyRows.ts": "src/grid/emptyRows.ts",
   "helpers.ts": "e2e/helpers.ts",
   "clipboard.spec.ts": "e2e/clipboard.spec.ts",
   "filtering.spec.ts": "e2e/filtering.spec.ts",
   "export.spec.ts": "e2e/export.spec.ts",
   "editing.spec.ts": "e2e/editing.spec.ts",
   "row-numbers.spec.ts": "e2e/row-numbers.spec.ts",
+  "empty-rows.spec.ts": "e2e/empty-rows.spec.ts",
 }
 
 describe("skill examples match the tested app code", () => {

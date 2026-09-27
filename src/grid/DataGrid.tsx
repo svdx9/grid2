@@ -33,7 +33,10 @@ import {
   type IRowNode,
   type DefaultMenuItem,
   type MenuItemDef,
+  type PostSortRowsParams,
   type ProcessDataFromClipboardParams,
+  type ShouldRowBeSkippedParams,
+  type BodyScrollEvent,
   type RowClassRules,
   type RowNumbersOptions,
 } from "ag-grid-community"
@@ -63,6 +66,14 @@ import {
 import { stripTrailingEmptyRows, unquoteTsvField } from "./clipboard"
 import { columnDefs, defaultColDef, parseForColumn, type GridContext } from "./columns"
 import { emptyOrder, generateOrders, type Order } from "./data"
+import {
+  EMPTY_ROW_PREFIX,
+  EMPTY_ROWS_INITIAL,
+  emptyRowsToAdd,
+  isBlankOrder,
+  makeEmptyRows,
+  moveEmptyRowsLast,
+} from "./emptyRows"
 import {
   excelStyles,
   sendToClipboard,
@@ -158,10 +169,27 @@ const EXPORT_NAME = () => `orders-${new Date().toISOString().slice(0, 10)}`
 
 const getRowId = ({ data }: GetRowIdParams<Order>) => data.id
 
-const defaultCsvExportParams: CsvExportParams = { processCellCallback: processCellForCsv }
+/** exports contain data rows only, never the empty rows below them */
+const skipEmptyRows = ({ node, context }: ShouldRowBeSkippedParams<Order>) =>
+  (context as GridContext).isEmptyRow(node.id)
+const defaultCsvExportParams: CsvExportParams = {
+  processCellCallback: processCellForCsv,
+  shouldRowBeSkipped: skipEmptyRows,
+}
 const defaultExcelExportParams: ExcelExportParams = {
   processCellCallback: processCellForExcel,
+  shouldRowBeSkipped: skipEmptyRows,
   sheetName: "Orders",
+}
+
+/**
+ * Data rows plus the initial block of empty rows, and the set of empty ids.
+ * Pure: React may call a state initialiser twice (StrictMode), so the id set
+ * must come from the same call as the rows.
+ */
+function initialRows(): { rows: Order[]; emptyIds: Set<string> } {
+  const empty = makeEmptyRows(EMPTY_ROWS_INITIAL)
+  return { rows: [...generateOrders(), ...empty], emptyIds: new Set(empty.map((r) => r.id)) }
 }
 const cellSelection: CellSelectionOptions<Order> = { handle: { mode: "fill" }, enableHeaderHighlight: true }
 const rowNumbers: RowNumbersOptions = { width: 52, minWidth: 44 }
@@ -173,8 +201,12 @@ export const DataGrid = memo(function DataGrid({
   onStatusChange,
   onNotice,
 }: DataGridProps) {
-  const [rowData, setRowData] = useState<Order[]>(() => generateOrders())
+  // ── Sheets-style empty rows below the data (see emptyRows.ts)
+  const [initial] = useState(initialRows)
+  const emptyIds = useRef(initial.emptyIds)
+  const [rowData, setRowData] = useState<Order[]>(initial.rows)
   const apiRef = useRef<GridApi<Order> | null>(null)
+  const isEmptyRow = useCallback((id: string | undefined) => !!id && emptyIds.current.has(id), [])
 
   // ── "bound" filters: rows added/edited while a filter is active stay visible
   const keptIds = useRef(new Set<string>())
@@ -199,9 +231,11 @@ export const DataGrid = memo(function DataGrid({
     let total = 0
     api.forEachNode(() => total++)
     const filtering = api.isAnyFilterPresent()
+    // empty rows always pass filters, so they're all displayed; count data rows only
+    const empty = emptyIds.current.size
     statusRef.current({
-      displayed: api.getDisplayedRowCount(),
-      total,
+      displayed: api.getDisplayedRowCount() - empty,
+      total: total - empty,
       kept: filtering ? keptIds.current.size : 0,
       filtering,
       activeColumnFilters: Object.keys(api.getFilterModel() ?? {}).length,
@@ -217,12 +251,12 @@ export const DataGrid = memo(function DataGrid({
   const keepRows = useCallback((nodes: IRowNode<Order>[]) => {
     const api = apiRef.current
     if (!api || !keepRef.current || !api.isAnyFilterPresent()) return
-    const fresh = nodes.filter((n) => n.id && !keptIds.current.has(n.id))
+    const fresh = nodes.filter((n) => n.id && !keptIds.current.has(n.id) && !isEmptyRow(n.id))
     if (!fresh.length) return
     for (const n of fresh) keptIds.current.add(n.id!)
     // re-evaluate rowClassRules for the marker stripe
     api.redrawRows({ rowNodes: fresh })
-  }, [])
+  }, [isEmptyRow])
 
   const clearKept = useCallback((refilter: boolean) => {
     const api = apiRef.current
@@ -239,16 +273,23 @@ export const DataGrid = memo(function DataGrid({
   }, [keepRowsVisible, clearKept])
 
   const alwaysPassFilter = useCallback(
-    (node: IRowNode<Order>) => keepRef.current && !!node.id && keptIds.current.has(node.id),
-    []
+    (node: IRowNode<Order>) =>
+      isEmptyRow(node.id) || (keepRef.current && !!node.id && keptIds.current.has(node.id)),
+    [isEmptyRow]
+  )
+
+  const postSortRows = useCallback(
+    ({ nodes }: PostSortRowsParams<Order>) => moveEmptyRowsLast(nodes, (n) => isEmptyRow(n.id)),
+    [isEmptyRow]
   )
 
   const rowClassRules = useMemo<RowClassRules<Order>>(
     () => ({
       "row-kept-visible": (p) =>
         keepRef.current && !!p.node.id && keptIds.current.has(p.node.id) && p.api.isAnyFilterPresent(),
+      "row-empty": (p) => isEmptyRow(p.node.id),
     }),
-    []
+    [isEmptyRow]
   )
 
   const context = useMemo<GridContext>(
@@ -263,8 +304,9 @@ export const DataGrid = memo(function DataGrid({
           text: `“${String(raw)}” isn't a valid ${colId} value — kept the previous value.`,
         })
       },
+      isEmptyRow,
     }),
-    []
+    [isEmptyRow]
   )
 
   // ───────────────────────────── row operations ─────────────────────────────
@@ -304,16 +346,16 @@ export const DataGrid = memo(function DataGrid({
       const to = Math.max(range.startRow.rowIndex, range.endRow.rowIndex)
       for (let i = from; i <= to; i++) {
         const node = api.getDisplayedRowAtIndex(i)
-        if (node?.data) nodes.add(node)
+        if (node?.data && !isEmptyRow(node.id)) nodes.add(node)
       }
     }
     if (!nodes.size) {
       const focused = api.getFocusedCell()
       const node = focused ? api.getDisplayedRowAtIndex(focused.rowIndex) : undefined
-      if (node?.data) nodes.add(node)
+      if (node?.data && !isEmptyRow(node.id)) nodes.add(node)
     }
     return [...nodes]
-  }, [])
+  }, [isEmptyRow])
 
   const deleteRows = useCallback(() => {
     const api = apiRef.current
@@ -430,13 +472,78 @@ export const DataGrid = memo(function DataGrid({
     publishStatus()
   }, [clearKept, publishStatus])
 
+  // rows whose empty/data status changed and need their row classes refreshed;
+  // flushed after the edit, or once at the end of a paste
+  const pendingRedraw = useRef(new Set<IRowNode<Order>>())
+  const flushRedraw = useCallback(() => {
+    const api = apiRef.current
+    if (!api || !pendingRedraw.current.size) return
+    api.redrawRows({ rowNodes: [...pendingRedraw.current] })
+    pendingRedraw.current.clear()
+  }, [])
+
   const onCellValueChanged = useCallback(
     (e: CellValueChangedEvent<Order>) => {
-      keepRows([e.node])
-      if (!pasting.current) publishStatus()
+      const { node } = e
+      const id = node.id
+      if (id && node.data) {
+        if (emptyIds.current.has(id) && !isBlankOrder(node.data)) {
+          // typing or pasting into an empty row makes it a data row
+          emptyIds.current.delete(id)
+          pendingRedraw.current.add(node)
+        } else if (id.startsWith(EMPTY_ROW_PREFIX) && !emptyIds.current.has(id) && isBlankOrder(node.data)) {
+          // a row that started out empty and has been cleared again (e.g. undo)
+          emptyIds.current.add(id)
+          keptIds.current.delete(id)
+          pendingRedraw.current.add(node)
+        }
+      }
+      keepRows([node])
+      if (!pasting.current) {
+        flushRedraw()
+        publishStatus()
+      }
     },
-    [keepRows, publishStatus]
+    [keepRows, publishStatus, flushRedraw]
   )
+
+  /** Append a batch of empty rows. Batched because adding rows clears undo history. */
+  const addEmptyRows = useCallback((api: GridApi<Order>, count: number) => {
+    if (count <= 0) return
+    const rows = makeEmptyRows(count)
+    for (const r of rows) emptyIds.current.add(r.id)
+    api.applyTransaction({ add: rows })
+  }, [])
+
+  /** Keep rows coming as the user scrolls towards the end (up to the cap). */
+  const growIfNearEnd = useCallback(
+    (api: GridApi<Order>) => {
+      const count = api.getDisplayedRowCount()
+      const last = count ? api.getDisplayedRowAtIndex(count - 1) : undefined
+      if (!last || last.rowTop == null || !last.rowHeight) return
+      const add = emptyRowsToAdd({
+        viewportBottom: api.getVerticalPixelRange().bottom,
+        contentBottom: last.rowTop + last.rowHeight,
+        rowHeight: last.rowHeight,
+        current: emptyIds.current.size,
+      })
+      addEmptyRows(api, add)
+    },
+    [addEmptyRows]
+  )
+
+  const onBodyScroll = useCallback(
+    (e: BodyScrollEvent<Order>) => {
+      if (e.direction === "vertical") growIfNearEnd(e.api)
+    },
+    [growIfNearEnd]
+  )
+
+  /** A tall screen (or a short filtered list) must still be filled to the bottom. */
+  const onFirstDataRendered = useCallback(() => {
+    const api = apiRef.current
+    if (api) growIfNearEnd(api)
+  }, [growIfNearEnd])
 
   const onPasteStart = useCallback(() => {
     pasting.current = true
@@ -447,6 +554,7 @@ export const DataGrid = memo(function DataGrid({
     const api = apiRef.current
     pasting.current = false
     if (!api) return
+    flushRedraw()
     let added = 0
     let invalid = invalidDuringPaste.current
     const overflow = pendingOverflow.current
@@ -463,7 +571,7 @@ export const DataGrid = memo(function DataGrid({
       noticeRef.current({ tone: invalid ? "warning" : "info", text: `Pasted — ${parts.join("; ")}.` })
     }
     publishStatus()
-  }, [appendOverflowRows, publishStatus])
+  }, [appendOverflowRows, publishStatus, flushRedraw])
 
   const getContextMenuItems = useCallback(
     (params: GetContextMenuItemsParams<Order>): (DefaultMenuItem | MenuItemDef<Order>)[] => [
@@ -508,6 +616,7 @@ export const DataGrid = memo(function DataGrid({
           fileName: `${EXPORT_NAME()}.csv`,
           exportedRows: scope === "all" ? "all" : "filteredAndSorted",
           processCellCallback: processCellForCsv,
+          shouldRowBeSkipped: skipEmptyRows,
         })
       },
       exportExcel: (scope) => {
@@ -519,13 +628,16 @@ export const DataGrid = memo(function DataGrid({
           sheetName: "Orders",
           exportedRows: scope === "all" ? "all" : "filteredAndSorted",
           processCellCallback: processCellForExcel,
+          shouldRowBeSkipped: skipEmptyRows,
           freezeRows: "headers",
           freezeColumns: "pinned",
         })
       },
       resetData: () => {
         keptIds.current.clear()
-        setRowData(generateOrders())
+        const next = initialRows()
+        emptyIds.current = next.emptyIds
+        setRowData(next.rows)
       },
     }),
     [addRow, deleteRows, clearKept]
@@ -555,6 +667,10 @@ export const DataGrid = memo(function DataGrid({
       quickFilterText={quickFilterText}
       alwaysPassFilter={alwaysPassFilter}
       rowClassRules={rowClassRules}
+      // Sheets-style empty rows: always last, and more appear as you scroll
+      postSortRows={postSortRows}
+      onBodyScroll={onBodyScroll}
+      onFirstDataRendered={onFirstDataRendered}
       // export
       excelStyles={excelStyles}
       defaultCsvExportParams={defaultCsvExportParams}

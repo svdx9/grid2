@@ -89,6 +89,7 @@ docs, so a reviewer knows what was verified.
 | CSV / Excel export | `references/export.md` |
 | Editing, editors, undo, adding/deleting rows | `references/editing.md` |
 | Column filters, quick filter, adding rows while filtered | `references/filtering.md` |
+| Spreadsheet-like behaviour: row numbers, empty rows below the data, infinite rows | `references/sheet-like.md` |
 | Setup, modules, theming (incl. shadcn/Tailwind), licence | `references/setup.md` |
 | Testing grid behaviour in a browser | `references/verification.md` |
 

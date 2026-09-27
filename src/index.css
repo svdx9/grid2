@@ -121,3 +121,8 @@
 .ag-row.row-kept-visible .ag-cell[col-id="sku"] {
   box-shadow: inset 3px 0 0 var(--kept);
 }
+
+/* Sheets-style empty rows below the data: no checkbox until the row has data */
+.ag-row.row-empty .ag-cell[col-id="shipped"] > * {
+  visibility: hidden;
+}

@@ -18,6 +18,8 @@ import {
 /** Grid-wide context: lets parsers report values they had to reject. */
 export interface GridContext {
   onInvalidValue: (colId: string, raw: unknown) => void
+  /** true for the Sheets-style empty rows below the data (see emptyRows.ts) */
+  isEmptyRow: (id: string | undefined) => boolean
 }
 
 export interface ColumnMeta {

@@ -100,15 +100,14 @@ test("quoted multi-line cell from Excel pastes into one cell", async ({ page }) 
   expect((await rowData(page, 0))?.notes).toBe('Line A\nLine "B"')
 })
 
-test("pasting past the last row appends new rows", async ({ page }) => {
-  await page.evaluate(() => window.__gridApi.ensureIndexVisible(249))
+test("pasting past the last data row fills the empty rows below", async ({ page }) => {
+  await page.evaluate(() => window.__gridApi.ensureIndexVisible(252))
   await clickCell(page, 249, "sku")
   await paste(page, "A1\tCust A\r\nA2\tCust B\r\nA3\tCust C\r\n")
   await expect.poll(() => totalCount(page)).toBe(252)
   expect((await rowData(page, 249))?.sku).toBe("A1")
   expect((await rowData(page, 250))?.customer).toBe("Cust B")
   expect((await rowData(page, 251))?.customer).toBe("Cust C")
-  await expect(page.getByTestId("notice")).toContainText("added 2 new rows")
 })
 
 test("paste is a single undo step", async ({ page }) => {

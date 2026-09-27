@@ -62,20 +62,47 @@ export const rowData = (page: Page, rowIndex: number) =>
 export const rowById = (page: Page, id: string) =>
   page.evaluate((rid) => window.__gridApi.getRowNode(rid)?.data as Order | undefined, id)
 
+/** data rows currently displayed (the Sheets-style empty rows below them excluded) */
 export const displayedCount = (page: Page) =>
-  page.evaluate(() => window.__gridApi.getDisplayedRowCount() as number)
-
-export const totalCount = (page: Page) =>
   page.evaluate(() => {
+    const api = window.__gridApi
+    const isEmpty = api.getGridOption("context").isEmptyRow
     let n = 0
-    window.__gridApi.forEachNode(() => n++)
+    api.forEachNodeAfterFilterAndSort((node: { id: string }) => !isEmpty(node.id) && n++)
     return n
   })
 
+/** empty rows currently in the grid */
+export const emptyRowCount = (page: Page) =>
+  page.evaluate(() => {
+    const api = window.__gridApi
+    const isEmpty = api.getGridOption("context").isEmptyRow
+    let n = 0
+    api.forEachNode((node: { id: string }) => isEmpty(node.id) && n++)
+    return n
+  })
+
+/** every displayed row, empty rows included */
+export const allDisplayedCount = (page: Page) =>
+  page.evaluate(() => window.__gridApi.getDisplayedRowCount() as number)
+
+/** data rows in the grid (empty rows excluded) */
+export const totalCount = (page: Page) =>
+  page.evaluate(() => {
+    const api = window.__gridApi
+    const isEmpty = api.getGridOption("context").isEmptyRow
+    let n = 0
+    api.forEachNode((node: { id: string }) => !isEmpty(node.id) && n++)
+    return n
+  })
+
+/** ids of displayed data rows, in display order (empty rows excluded) */
 export const displayedIds = (page: Page) =>
   page.evaluate(() => {
+    const api = window.__gridApi
+    const isEmpty = api.getGridOption("context").isEmptyRow
     const ids: string[] = []
-    window.__gridApi.forEachNodeAfterFilterAndSort((n: { id: string }) => ids.push(n.id))
+    api.forEachNodeAfterFilterAndSort((n: { id: string }) => !isEmpty(n.id) && ids.push(n.id))
     return ids
   })
 
