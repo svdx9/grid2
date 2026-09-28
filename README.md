@@ -2,17 +2,62 @@
 
 A small, fully-tested React app showing AG Grid **36.2** (Enterprise, trial mode)
 styled with the shadcn/ui **Mira** style (Radix base, neutral theme, Inter,
-Hugeicons). It covers:
+Hugeicons).
 
-| Feature | Where |
-| --- | --- |
-| Cell editing (text, number, date, rich select, checkbox, multi-line), undo/redo | `src/grid/columns.ts` |
-| Copy / cut / paste of cell ranges, fill handle, Ctrl+D, row numbers that keep their value when filtering, like Sheets (click or drag to select whole rows), Sheets-style empty rows below the data that grow as you scroll (`src/grid/emptyRows.ts`) | `src/grid/DataGrid.tsx`, `src/grid/io.ts` |
-| Copy/paste round trip with Excel | `src/grid/clipboard.ts`, `src/grid/io.ts`, `src/grid/locale.ts` |
-| Export to CSV and .xlsx | `src/grid/io.ts` |
-| Column filters: Excel (Mac) mode value lists on every column, text/number/date conditions in a submenu, opened from a filter button in each header cell | `src/grid/columns.ts` |
-| Global filter (quick filter) | `src/App.tsx` |
-| Filters bound to the existing rows, so rows can be added/edited while filtered | `src/grid/DataGrid.tsx` |
+## Features
+
+In the order they were added:
+
+1. **Cell editing.** Text, number, date, searchable region select, checkbox
+   and multi-line notes. Enter moves down like Excel, undo/redo (Ctrl+Z / Ctrl+Y),
+   and invalid input keeps the old value with a notice instead of writing
+   blank/NaN. — `src/grid/columns.ts`
+2. **Copy / cut / paste of cell ranges.** Drag or Shift+arrows to select;
+   a single copied value fills the whole selection; fill handle and Ctrl+D;
+   Delete clears a range; a paste is one undo step. — `src/grid/DataGrid.tsx`
+3. **Copy/paste round trip with Excel.** Canonical values on the clipboard
+   plus a typed HTML table for Excel (leading zeros, dates, currency and
+   multi-line cells survive); Excel's own formats are parsed on paste
+   (`$1,234.50`, `(12)`, `26/09/2026`, `Sep 26, 2026`, `TRUE`…). —
+   `src/grid/clipboard.ts`, `src/grid/io.ts`, `src/grid/locale.ts`
+4. **Export to CSV and .xlsx**, for the visible (filtered) rows or all rows.
+   CSV is UTF-8 with BOM and formula-injection protection; xlsx keeps real
+   types and freezes the header and pinned column. — `src/grid/io.ts`
+5. **Column filters** on every column. — `src/grid/columns.ts`
+6. **Global filter**: one search box across all columns, including formatted
+   values. — `src/App.tsx`
+7. **Filters bound to the existing rows.** Rows added or edited while a
+   filter is active stay visible (amber stripe) instead of vanishing; changing
+   the filter or *Re-apply filter* evaluates it afresh; a switch restores AG
+   Grid's default behaviour. — `src/grid/DataGrid.tsx`
+8. **Row numbers** (Google Sheets style) in a leftmost column: click a number
+   to select the whole row, drag down the numbers to select several rows. —
+   `src/grid/DataGrid.tsx`
+9. **Empty rows below the data**, like a spreadsheet: they fill the space under
+   the data (filtered or not) and more appear as you scroll, up to 1,000. Typing
+   or pasting into one makes it a real row; they're left out of counts, deletes
+   and exports. — `src/grid/emptyRows.ts`
+10. **Row numbers fit and are centred** — room for five digits, since the
+    empty rows take the count past 999.
+11. **Row numbers stay with their rows when filtering** (a filtered view reads
+    3, 7, 12…, not 1, 2, 3); sorting renumbers top to bottom. —
+    `src/grid/rowNumbering.ts`
+12. **Excel (Mac) mode filters.** Every column has a searchable value list that
+    filters as you type, with a Reset button and blanks listed last; text,
+    number and date columns also have Excel's "Text/Number/Date Filter"
+    conditions in a submenu; dates are a year › month › day tree; values show
+    as formatted in the cells. — `src/grid/columns.ts`
+13. **Filter button in the header cell**: each header reads title · filter ·
+    menu, with no separate filter row; an active filter is marked on its
+    button.
+14. **Pinning fixed in code**: SKU is pinned left by the column definitions;
+    users can't pin or unpin (no "Pin Column" in the menu).
+15. **Visible columns fixed in code**: no "Choose Columns" in the menu, and
+    dragging a header off the grid doesn't hide it.
+16. **Column order fixed in code**: headers can't be dragged to reorder.
+
+Plus light/dark theme from the shadcn tokens, and a build that runs inside an
+embedding viewer (sizes to its frame, follows the host's `data-theme`).
 
 ```bash
 npm install
