@@ -166,7 +166,7 @@ export const columnDefs: ColDef<Order>[] = [
     cellEditor: "agNumberCellEditor",
     cellEditorParams: { precision: 0 },
     valueFormatter: (p: ValueFormatterParams<Order, number>) => formatInteger(p.value),
-    width: 90,
+    width: 96,
     cellClass: ["xl-int", "tabular-nums"],
   }),
   col("unitPrice", {
@@ -177,7 +177,7 @@ export const columnDefs: ColDef<Order>[] = [
     cellEditorParams: { precision: 2 },
     valueFormatter: (p: ValueFormatterParams<Order, number>) => formatCurrency(p.value),
     getQuickFilterText: (p) => `${p.value ?? ""} ${formatCurrency(p.value)}`,
-    width: 115,
+    width: 132,
     cellClass: ["xl-currency", "tabular-nums"],
   }),
   col("total", {
@@ -210,7 +210,7 @@ export const columnDefs: ColDef<Order>[] = [
     cellDataType: "boolean",
     ...excelFilter(undefined, listValues<boolean>((v) => (v ? "Yes" : "No"))),
     getQuickFilterText: (p) => (p.value ? "shipped" : ""),
-    width: 100,
+    width: 124,
   }),
   col("notes", {
     headerName: "Notes",
@@ -230,7 +230,8 @@ export const defaultColDef: ColDef<Order> = {
   editable: true,
   sortable: true,
   resizable: true,
-  floatingFilter: true,
+  // filters open from a button in the header cell (title · filter · menu), no separate filter row
+  floatingFilter: false,
   suppressHeaderMenuButton: false,
   enableCellChangeFlash: true,
 }

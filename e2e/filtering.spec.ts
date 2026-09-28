@@ -16,13 +16,44 @@ test.beforeEach(async ({ page }) => openGrid(page))
 
 const NORTH = { region: { filterType: "set", values: ["North"] } }
 
-test("column filter via the floating filter UI", async ({ page }) => {
-  const input = page.locator(".ag-floating-filter[aria-colindex] input").nth(0) // SKU text filter
-  await input.fill("000")
-  await expect.poll(() => displayedCount(page)).toBeLessThan(250)
+test("column filter from the filter button in the header cell", async ({ page }) => {
+  await page.locator('.ag-header-cell[col-id="sku"] .ag-header-cell-filter-button').click()
+  const popup = page.locator(".ag-popup .ag-filter").last()
+  await expect(popup).toBeVisible()
+  await popup.locator(".ag-mini-filter input").fill("000")
+  await expect.poll(() => displayedCount(page), { timeout: 5000 }).toBeLessThan(250)
   const ids = await displayedIds(page)
   for (const id of ids) expect((await rowById(page, id))!.sku).toContain("000")
   await expect(page.getByTestId("row-count")).toContainText(`of 250 rows`)
+})
+
+test("one header row: each cell reads title, filter button, menu button", async ({ page }) => {
+  await expect(page.locator(".ag-floating-filter")).toHaveCount(0)
+  const headers = page.locator(".ag-header-cell[col-id]:not([col-id='ag-Grid-RowNumbersColumn'])")
+  const count = await headers.count()
+  expect(count).toBeGreaterThanOrEqual(9)
+  for (let i = 0; i < count; i++) {
+    const header = headers.nth(i)
+    const colId = await header.getAttribute("col-id")
+    const x = await header.evaluate((h) =>
+      [".ag-header-cell-text", ".ag-header-cell-filter-button", ".ag-header-cell-menu-button"].map((sel) => {
+        const el = h.querySelector(sel) as HTMLElement | null
+        return el && el.offsetParent ? el.getBoundingClientRect().x : null
+      })
+    )
+    expect(x.every((v) => v != null), `${colId} has title, filter and menu`).toBe(true)
+    expect(x[0]! < x[1]! && x[1]! < x[2]!, `${colId} order`).toBe(true)
+    // the title is readable, not truncated by the buttons
+    const truncated = await header.locator(".ag-header-cell-text").evaluate((t) => t.scrollWidth > t.clientWidth)
+    expect(truncated, `${colId} title fits`).toBe(false)
+  }
+})
+
+test("an active filter is marked on its header filter button", async ({ page }) => {
+  const button = page.locator('.ag-header-cell[col-id="region"] .ag-header-cell-filter-button')
+  await expect(button).not.toHaveClass(/ag-filter-active/)
+  await setFilterModel(page, NORTH)
+  await expect(button).toHaveClass(/ag-filter-active/)
 })
 
 test("set filter from the column menu", async ({ page }) => {

@@ -8,7 +8,12 @@ Verified against AG Grid 36.2.0. Working code: `examples/DataGrid.tsx`.
   `agDateColumnFilter`, Enterprise `agSetColumnFilter`, `agMultiColumnFilter`.
   With Enterprise, `filter: true` means the Set Filter
   (`suppressSetFilterByDefault` to change that).
-- `floatingFilter: true` adds the filter row under the headers.
+- `floatingFilter: true` adds a second header row with a filter input per
+  column. Without it (and with the default `columnMenu: 'new'`) each header
+  cell shows its own filter button: title · filter · menu, in that order
+  (the template is menu, filter, label, drawn right-to-left). An active filter
+  adds `ag-filter-active` to that button. Icons take ~40px, so widen narrow
+  columns or their titles get truncated.
 - The quick filter (`quickFilterText`, `QuickFilterModule`) matches **raw**
   values. Users type what they see (`$1,499.99`, `Sep 2025`), so add
   `getQuickFilterText` returning raw *and* formatted text for formatted columns.

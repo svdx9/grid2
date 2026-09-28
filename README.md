@@ -10,7 +10,7 @@ Hugeicons). It covers:
 | Copy / cut / paste of cell ranges, fill handle, Ctrl+D, row numbers that keep their value when filtering, like Sheets (click or drag to select whole rows), Sheets-style empty rows below the data that grow as you scroll (`src/grid/emptyRows.ts`) | `src/grid/DataGrid.tsx`, `src/grid/io.ts` |
 | Copy/paste round trip with Excel | `src/grid/clipboard.ts`, `src/grid/io.ts`, `src/grid/locale.ts` |
 | Export to CSV and .xlsx | `src/grid/io.ts` |
-| Column filters: Excel (Mac) mode value lists on every column, text/number/date conditions in a submenu, floating filters | `src/grid/columns.ts` |
+| Column filters: Excel (Mac) mode value lists on every column, text/number/date conditions in a submenu, opened from a filter button in each header cell | `src/grid/columns.ts` |
 | Global filter (quick filter) | `src/App.tsx` |
 | Filters bound to the existing rows, so rows can be added/edited while filtered | `src/grid/DataGrid.tsx` |
 
@@ -18,7 +18,7 @@ Hugeicons). It covers:
 npm install
 npm run dev          # http://localhost:5173
 npm test             # unit tests (parsers, clipboard encoding)
-npm run test:e2e     # 59 Playwright tests driving the real grid in Chromium
+npm run test:e2e     # 61 Playwright tests driving the real grid in Chromium
 ```
 
 The xlsx e2e test reads the exported workbook with Python's `openpyxl`

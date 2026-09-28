@@ -413,7 +413,7 @@ function HowToPanel() {
         <Step title="Column filters + global filter">
           <p>
             Excel (Mac)–style filters on every column: a searchable value list that filters as you type, with
-            Text/Number/Date conditions in a submenu. Floating filters sit under each header. The search box filters across every
+            Text/Number/Date conditions in a submenu. Open it with the filter button next to each column title. The search box filters across every
             column, including formatted values (“$49.00”, “Sept 2025”).
           </p>
         </Step>
