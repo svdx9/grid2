@@ -123,6 +123,3 @@ and reads the rest from the installed packages:
 - `references/*.md` — tested rules for clipboard/Excel, export, editing,
   filtering, setup and verification.
 - `examples/` — the tested code from this app (a test keeps them identical).
-
-`skill-evals/ag-grid-offline/` measures it: a headless agent gets a task on a
-fresh app with web access denied, and hidden Playwright tests grade the result.
