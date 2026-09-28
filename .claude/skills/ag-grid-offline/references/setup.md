@@ -47,8 +47,27 @@ errors are emitted during grid initialisation.
 
 - `themeQuartz.withParams({...})` accepts CSS values, including
   `var(--token)` and `color-mix(...)`, so the grid can follow a design
-  system's variables (and light/dark switching) with no JS.
-  `examples/theme.ts` maps every relevant param to shadcn/ui tokens.
+  system's variables (and light/dark switching) with no JS. For shadcn/ui:
+
+  ```ts
+  themeQuartz.withParams({
+    fontFamily: "inherit",
+    backgroundColor: "var(--background)",
+    foregroundColor: "var(--foreground)",
+    borderColor: "var(--border)",
+    accentColor: "var(--primary)",
+    headerBackgroundColor: "var(--muted)",
+    headerTextColor: "var(--muted-foreground)",
+    menuBackgroundColor: "var(--popover)",
+    inputFocusBorder: { color: "var(--ring)" },
+    borderRadius: "calc(var(--radius) * 0.8)",
+    wrapperBorderRadius: "var(--radius)",
+    browserColorScheme: "inherit",
+  })
+  ```
+
+  Colours derived from `accentColor` (range selection, selected row numbers)
+  can be too dark with a near-black primary — set those params explicitly.
 - `browserColorScheme: "inherit"` so native inputs follow the page.
 - Don't combine with the legacy `ag-grid.css` themes.
 
@@ -63,8 +82,20 @@ an `AG Grid: error/warning` line and doesn't fail the console fixture.
 
 Formatters built at module load with `navigator.language` crash on tags
 `Intl` rejects (`en-US@posix` in some headless/Linux environments). Validate
-with `Intl.getCanonicalLocales` after stripping `@…`/`.…` suffixes
-(`resolveLocale` in `examples/locale.ts`).
+with `Intl.getCanonicalLocales` after stripping `@…`/`.…` suffixes:
+
+```ts
+function resolveLocale(candidates: readonly string[]): string {
+  for (const tag of candidates) {
+    try {
+      const [ok] = Intl.getCanonicalLocales(tag.replace(/[@.].*$/, "").replace(/_/g, "-"))
+      if (ok) return ok
+    } catch { /* try the next */ }
+  }
+  return new Intl.NumberFormat().resolvedOptions().locale || "en-US"
+}
+const LOCALE = resolveLocale(navigator.languages ?? [navigator.language])
+```
 
 ## Fixed column layout
 

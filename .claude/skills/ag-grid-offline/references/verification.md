@@ -62,4 +62,3 @@ use: {
 - **Exports:** capture `page.waitForEvent("download")`, then parse the file
   (CSV text incl. BOM; xlsx with openpyxl — see `export.md`).
 
-Full, passing examples: `examples/*.spec.ts` and `examples/helpers.ts`.

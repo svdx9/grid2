@@ -1,6 +1,6 @@
 # CSV and Excel export
 
-Verified against AG Grid 36.2.0. Working code: `examples/io.ts`.
+Verified against AG Grid 36.2.0.
 
 ## Both
 
@@ -56,4 +56,5 @@ assert ws.cell(2, 6).number_format == "$#,##0.00"
 assert ws.freeze_panes == "B2"
 ```
 
-The Playwright version is in `examples/export.spec.ts`.
+In Playwright: `const file = await (await page.waitForEvent("download")).path()`
+after clicking export, then run a check like the one above on it.

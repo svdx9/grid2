@@ -1,6 +1,6 @@
 # Filtering, and adding rows while filtered
 
-Verified against AG Grid 36.2.0. Working code: `examples/DataGrid.tsx`.
+Verified against AG Grid 36.2.0.
 
 ## Column and quick filters
 
@@ -71,7 +71,7 @@ Fix — bind the filter to the rows it was applied to, with the built-in
    the row background and put a stripe on the first cell instead.
 6. Remove ids of deleted rows from the set.
 
-Tests to keep (see `examples/filtering.spec.ts`): add row under a filter stays
+Tests to write: add row under a filter stays
 visible; row edited out of the filter survives a later transaction; pasted
 overflow rows stay visible; changing the filter / re-apply hides them; works
 with the quick filter; feature off → default behaviour.

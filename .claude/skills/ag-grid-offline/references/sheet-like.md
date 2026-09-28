@@ -1,8 +1,6 @@
 # Spreadsheet-like behaviour (Google Sheets / Excel feel)
 
-Verified against AG Grid 36.2.0. Working code: `examples/DataGrid.tsx`,
-`examples/emptyRows.ts`, tests in `examples/row-numbers.spec.ts` and
-`examples/empty-rows.spec.ts`.
+Verified against AG Grid 36.2.0.
 
 ## Row numbers with row selection
 
@@ -32,7 +30,41 @@ reproduce its sort (36.2 `RowNodeSorter.compareRowNodes`): raw values via
 `_defaultComparator` (not exported: nulls first, then plain `<`/`>`, or
 `localeCompare` with `accentedSort`); stable `Array.sort`, ties in data order
 (`forEachNode` order). Test parity with the grid's own order for every column
-in both directions. See `examples/rowNumbering.ts`.
+in both directions.
+
+```ts
+// AG Grid 36.2 _defaultComparator (not exported)
+function defaultComparator(a: any, b: any, accented = false) {
+  if (a == null) return b == null ? 0 : -1
+  if (b == null) return 1
+  if (!accented || typeof a !== "string") return a > b ? 1 : a < b ? -1 : 0
+  return a.localeCompare(b)
+}
+
+/** row id → number, filters ignored; call on every modelUpdated */
+function computeRowNumbers(api: GridApi, isEmpty: (id?: string) => boolean) {
+  const keys = api.getColumnState().filter((s) => s.sort)
+    .sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
+    .map((s) => ({ col: api.getColumn(s.colId)!, desc: s.sort === "desc" }))
+  const accented = !!api.getGridOption("accentedSort")
+  const data: IRowNode[] = [], empty: IRowNode[] = []
+  api.forEachNode((n) => (isEmpty(n.id) ? empty : data).push(n)) // data order
+  data.sort((a, b) => {                                            // stable
+    for (const { col, desc } of keys) {
+      const va = api.getCellValue({ rowNode: a, colKey: col })
+      const vb = api.getCellValue({ rowNode: b, colKey: col })
+      const cmp = col.getColDef().comparator
+      const r = typeof cmp === "function" ? cmp(va, vb, a, b, desc) : defaultComparator(va, vb, accented)
+      if (r) return desc ? -r : r
+    }
+    return 0
+  })
+  const numbers = new Map<string, number>()
+  ;[...data, ...empty].forEach((n, i) => n.id && numbers.set(n.id, i + 1))
+  return numbers
+}
+// rowNumbers: { valueGetter: (p) => numbers.get(p.node?.id) }
+```
 
 ## Empty rows below the data, growing as you scroll
 
@@ -44,7 +76,16 @@ placeholder rows:
   tests can use it.
 - **Always last:** `postSortRows` with a stable partition (data rows keep their
   order, empty rows follow in creation order). `postSortRows` runs on every
-  sort-stage refresh, *including when no column is sorted*.
+  sort-stage refresh, *including when no column is sorted*:
+
+  ```ts
+  postSortRows: ({ nodes }) => {
+    const data = nodes.filter((n) => !isEmptyRow(n.id))
+    const empty = nodes.filter((n) => isEmptyRow(n.id)).sort((a, b) => seq(a.id) - seq(b.id))
+    nodes.length = 0
+    nodes.push(...data, ...empty) // must mutate in place
+  }
+  ```
 - **Always visible:** return `true` from `alwaysPassFilter` for them, so a
   filtered subset (column filters or quick filter) is still followed by empty
   rows. Filter changes then need no extra rows.

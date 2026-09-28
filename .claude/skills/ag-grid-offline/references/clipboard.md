@@ -2,7 +2,6 @@
 
 Verified against AG Grid 36.2.0 (Enterprise `ClipboardModule`,
 `CellSelectionModule`). Each item lists how to re-verify on another version.
-Working code: `examples/clipboard.ts`, `examples/io.ts`, `examples/DataGrid.tsx`.
 
 ## How paste works (read this first)
 
@@ -29,7 +28,23 @@ Re-verify: `ag-lookup.mjs source "processClipboardData\(data\)" -C 30`.
    newline, tab or leading quote as `"Line A⏎Line ""B"""`. AG Grid's tokenizer
    splits rows/cells correctly but leaves the quote characters in the value.
    Its fields are otherwise the verbatim raw text, so unquote each field in
-   `processDataFromClipboard` (`unquoteTsvField` in `examples/clipboard.ts`).
+   `processDataFromClipboard`:
+
+   ```ts
+   /** Excel's quoting: needed for tab/CR/LF or a leading quote */
+   const quoteTsvField = (v: string) =>
+     /[\t\r\n]/.test(v) || v.startsWith('"') ? `"${v.replace(/"/g, '""')}"` : v
+
+   /** undo it — only for well-formed quoted fields (inner quotes all doubled) */
+   function unquoteTsvField(f: string) {
+     if (f.length >= 2 && f.startsWith('"') && f.endsWith('"')) {
+       const inner = f.slice(1, -1)
+       if (!/(^|[^"])"("")*([^"]|$)/.test(inner)) return inner.replace(/""/g, '"')
+     }
+     return f
+   }
+   ```
+
    Pin the AG Grid version and keep the unit test that runs a copy of the
    tokenizer, so an upgrade that fixes this is noticed (double-unquoting
    would corrupt values that really are quoted).
@@ -59,7 +74,8 @@ Re-verify: `ag-lookup.mjs source "processClipboardData\(data\)" -C 30`.
    locales), `26/09/2026` vs `9/26/2026` (unambiguous when a part > 12,
    otherwise the browser locale's order), `26-Sep-2026`, `Sep 26, 2026`,
    Excel serial numbers, `TRUE/FALSE/yes/no/1/0`. Invalid → keep
-   `oldValue` and tell the user. See `examples/locale.ts` (unit-tested).
+   `oldValue` and tell the user. Unit-test the parser against these inputs
+   for at least one dot-decimal and one comma-decimal locale.
 
 7. **Paste past the last row is dropped** silently. To grow the grid: in
    `processDataFromClipboard` work out the anchor (top-left of a multi-cell

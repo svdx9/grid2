@@ -122,4 +122,3 @@ and reads the rest from the installed packages:
   gitignored).
 - `references/*.md` — tested rules for clipboard/Excel, export, editing,
   filtering, setup and verification.
-- `examples/` — the tested code from this app (a test keeps them identical).

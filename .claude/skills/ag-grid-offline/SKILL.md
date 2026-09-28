@@ -93,9 +93,6 @@ docs, so a reviewer knows what was verified.
 | Setup, modules, theming (incl. shadcn/Tailwind), licence | `references/setup.md` |
 | Testing grid behaviour in a browser | `references/verification.md` |
 
-`examples/` holds a working, tested implementation of all of the above
-(AG Grid 36.2, React). Copy patterns from it rather than re-deriving them.
-
 ## Definition of done
 
 - `check-modules.mjs` exits 0.

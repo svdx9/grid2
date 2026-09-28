@@ -1,7 +1,6 @@
 # Editing, adding and deleting rows
 
-Verified against AG Grid 36.2.0. Working code: `examples/columns.ts`,
-`examples/DataGrid.tsx`.
+Verified against AG Grid 36.2.0.
 
 ## Editors and parsing
 
