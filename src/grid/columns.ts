@@ -1,5 +1,6 @@
 import type {
   ColDef,
+  GetMainMenuItemsParams,
   ValueFormatterParams,
   ValueParserParams,
 } from "ag-grid-community"
@@ -226,6 +227,18 @@ export const columnDefs: ColDef<Order>[] = [
   }),
 ]
 
+/**
+ * The columns shown are fixed in code: drop "Choose Columns" from the column
+ * menu (AG Grid adds it whenever the column chooser exists; there's no
+ * per-column flag), and tidy any separators left doubled or dangling.
+ */
+function mainMenuItems({ defaultItems }: GetMainMenuItemsParams<Order>) {
+  const items = defaultItems.filter((item) => item !== "columnChooser")
+  return items.filter(
+    (item, i) => item !== "separator" || (i > 0 && i < items.length - 1 && items[i - 1] !== "separator")
+  )
+}
+
 export const defaultColDef: ColDef<Order> = {
   editable: true,
   sortable: true,
@@ -237,4 +250,5 @@ export const defaultColDef: ColDef<Order> = {
   // pinning is fixed in code (SKU is pinned left above); users can't pin/unpin:
   // no "Pin Column" menu item, no dragging columns into the pinned area
   lockPinned: true,
+  mainMenuItems,
 }

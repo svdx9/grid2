@@ -73,3 +73,10 @@ To keep pinning defined in code only, set `lockPinned: true` (in
 builds `pinSubMenu` only when `!colDef.lockPinned`) and users can't drag a
 column into the pinned area; `pinned: 'left'` in a colDef and the API still
 work. The row-numbers column is always pinned left by the grid itself.
+
+To keep the *visible columns* fixed too: "Choose Columns" has no colDef flag —
+36.2 adds `columnChooser` to the default menu whenever the column chooser
+exists — so filter it out of `params.defaultItems` in a `mainMenuItems`
+callback (and tidy leftover `'separator'` entries). Also set
+`suppressDragLeaveHidesColumns: true`: by default dragging a header off the
+grid hides that column (verified — the test fails without it).

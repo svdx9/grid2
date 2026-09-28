@@ -687,6 +687,8 @@ export const DataGrid = memo(function DataGrid({
       enterNavigatesVerticallyAfterEdit
       enterNavigatesVertically
       // selection + clipboard
+      // columns are fixed in code: dragging a header off the grid doesn't hide it
+      suppressDragLeaveHidesColumns
       cellSelection={cellSelection}
       rowNumbers={rowNumbers}
       processCellForClipboard={processCellForClipboard}

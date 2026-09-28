@@ -177,3 +177,32 @@ test("column pinning is fixed in code: SKU pinned left, no Pin Column option", a
     await page.keyboard.press("Escape")
   }
 })
+
+test("visible columns are fixed in code: no Choose Columns, drag-out doesn't hide", async ({ page }) => {
+  const visible = () =>
+    page.evaluate(() => window.__gridApi.getAllDisplayedColumns().map((c: { getColId(): string }) => c.getColId()))
+  const before = await visible()
+  for (const colId of ["sku", "customer", "notes"]) {
+    await page.locator(`.ag-header-cell[col-id="${colId}"] .ag-header-cell-menu-button`).click()
+    const menu = page.locator(".ag-menu").last()
+    await expect(menu.getByText("Sort Ascending")).toBeVisible()
+    await expect(menu.getByText("Choose Columns")).toHaveCount(0)
+    // no leading, trailing or doubled separators left behind
+    const kinds = await menu
+      .locator(".ag-menu-list > *")
+      .evaluateAll((els) => els.map((e) => (e.classList.contains("ag-menu-separator") ? "sep" : "item")))
+    expect(kinds[0]).toBe("item")
+    expect(kinds[kinds.length - 1]).toBe("item")
+    expect(kinds.join(",")).not.toContain("sep,sep")
+    await page.keyboard.press("Escape")
+  }
+  // drag the Region header well outside the grid and let go
+  const header = page.locator('.ag-header-cell[col-id="region"] .ag-header-cell-text')
+  const box = (await header.boundingBox())!
+  await page.mouse.move(box.x + 5, box.y + 5)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 5, box.y - 60, { steps: 10 })
+  await page.mouse.move(box.x + 5, 5, { steps: 10 })
+  await page.mouse.up()
+  expect(await visible()).toEqual(before)
+})
