@@ -206,3 +206,16 @@ test("visible columns are fixed in code: no Choose Columns, drag-out doesn't hid
   await page.mouse.up()
   expect(await visible()).toEqual(before)
 })
+
+test("column order is fixed in code: dragging a header doesn't move it", async ({ page }) => {
+  const order = () =>
+    page.evaluate(() => window.__gridApi.getAllDisplayedColumns().map((c: { getColId(): string }) => c.getColId()))
+  const before = await order()
+  const from = (await page.locator('.ag-header-cell[col-id="region"] .ag-header-cell-text').boundingBox())!
+  const to = (await page.locator('.ag-header-cell[col-id="unitPrice"] .ag-header-cell-text').boundingBox())!
+  await page.mouse.move(from.x + 5, from.y + 5)
+  await page.mouse.down()
+  await page.mouse.move(to.x + 20, to.y + 5, { steps: 15 })
+  await page.mouse.up()
+  expect(await order()).toEqual(before)
+})

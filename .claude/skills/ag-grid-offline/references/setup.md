@@ -80,3 +80,6 @@ exists — so filter it out of `params.defaultItems` in a `mainMenuItems`
 callback (and tidy leftover `'separator'` entries). Also set
 `suppressDragLeaveHidesColumns: true`: by default dragging a header off the
 grid hides that column (verified — the test fails without it).
+
+And the *order*: `suppressMovableColumns: true` (grid option; `suppressMovable`
+per column) stops header drag-to-reorder. Moving columns is on by default.

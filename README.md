@@ -18,7 +18,7 @@ Hugeicons). It covers:
 npm install
 npm run dev          # http://localhost:5173
 npm test             # unit tests (parsers, clipboard encoding)
-npm run test:e2e     # 63 Playwright tests driving the real grid in Chromium
+npm run test:e2e     # 64 Playwright tests driving the real grid in Chromium
 ```
 
 The xlsx e2e test reads the exported workbook with Python's `openpyxl`
