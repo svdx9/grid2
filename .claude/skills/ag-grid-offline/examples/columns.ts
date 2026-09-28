@@ -234,4 +234,7 @@ export const defaultColDef: ColDef<Order> = {
   floatingFilter: false,
   suppressHeaderMenuButton: false,
   enableCellChangeFlash: true,
+  // pinning is fixed in code (SKU is pinned left above); users can't pin/unpin:
+  // no "Pin Column" menu item, no dragging columns into the pinned area
+  lockPinned: true,
 }

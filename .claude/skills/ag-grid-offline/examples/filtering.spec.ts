@@ -156,3 +156,24 @@ test("switch off → AG Grid's default behaviour (row disappears)", async ({ pag
   await page.keyboard.press("Escape")
   await expect.poll(() => displayedCount(page)).toBe(before)
 })
+
+test("column pinning is fixed in code: SKU pinned left, no Pin Column option", async ({ page }) => {
+  const pinned = await page.evaluate(() =>
+    window.__gridApi
+      .getColumnState()
+      .filter((c: { pinned: string | null }) => c.pinned)
+      .map((c: { colId: string; pinned: string }) => [c.colId, c.pinned])
+  )
+  expect(pinned).toEqual([
+    ["ag-Grid-RowNumbersColumn", "left"],
+    ["sku", "left"],
+  ])
+  for (const colId of ["sku", "customer"]) {
+    await page.locator(`.ag-header-cell[col-id="${colId}"] .ag-header-cell-menu-button`).click()
+    const menu = page.locator(".ag-menu").last()
+    await expect(menu).toBeVisible()
+    await expect(menu.getByText("Sort Ascending")).toBeVisible()
+    await expect(menu.getByText("Pin Column")).toHaveCount(0)
+    await page.keyboard.press("Escape")
+  }
+})

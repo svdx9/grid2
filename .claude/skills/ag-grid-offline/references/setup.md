@@ -65,3 +65,11 @@ Formatters built at module load with `navigator.language` crash on tags
 `Intl` rejects (`en-US@posix` in some headless/Linux environments). Validate
 with `Intl.getCanonicalLocales` after stripping `@…`/`.…` suffixes
 (`resolveLocale` in `examples/locale.ts`).
+
+## Fixed column layout
+
+To keep pinning defined in code only, set `lockPinned: true` (in
+`defaultColDef`): the default column menu then omits "Pin Column" (36.2
+builds `pinSubMenu` only when `!colDef.lockPinned`) and users can't drag a
+column into the pinned area; `pinned: 'left'` in a colDef and the API still
+work. The row-numbers column is always pinned left by the grid itself.
